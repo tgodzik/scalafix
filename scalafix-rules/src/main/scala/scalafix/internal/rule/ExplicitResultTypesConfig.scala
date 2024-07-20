@@ -9,6 +9,7 @@ import metaconfig._
 import metaconfig.annotation._
 import metaconfig.generic.Surface
 import scalafix.internal.config._
+import scala.meta.classifiers.XtensionClassifiable
 
 case class ExplicitResultTypesConfig(
     @Description("Enable/disable this rule for defs, vals or vars.")

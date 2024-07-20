@@ -93,7 +93,10 @@ lazy val rules = projectMatrix
           semanticdbScalacCore,
           collectionCompat
         )
-      else Nil
+      else 
+        List(
+          "org.scala-lang" % "scala3-presentation-compiler_3" % scalaVersion.value,
+        )
     }
   )
   .defaultAxes(VirtualAxis.jvm)

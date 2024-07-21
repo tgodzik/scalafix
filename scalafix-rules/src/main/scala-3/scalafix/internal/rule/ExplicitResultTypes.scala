@@ -16,17 +16,23 @@ import scala.meta.trees.Origin.DialectOnly
 import scala.meta.trees.Origin.Parsed
 import scala.meta.inputs.Input.File
 import scala.meta.inputs.Input.VirtualFile
+import scala.jdk.CollectionConverters._
 import java.nio.file.Paths
 import scala.util.Random
 import scala.meta.internal.metals.EmptyCancelToken
 import scalafix.patch.Patch.empty
+import scalafix.internal.v1.LazyValue
+import scala.util.Success
+import scala.meta.pc.PresentationCompilerConfig
+import scala.meta.internal.pc.PresentationCompilerConfigImpl
+import scala.meta.pc.PresentationCompiler
 
 final class ExplicitResultTypes(
-    config: ExplicitResultTypesConfig
+    config: ExplicitResultTypesConfig,
+    pc: LazyValue[Option[PresentationCompiler]]
 ) extends SemanticRule("ExplicitResultTypes") {
 
-  val pc = new ScalaPresentationCompiler()
-  def this() = this(ExplicitResultTypesConfig.default)
+  def this() = this(ExplicitResultTypesConfig.default, LazyValue.now(None))
 
   val compilerScalaVersion: String = RulesBuildInfo.scalaVersion
 
@@ -52,6 +58,7 @@ final class ExplicitResultTypes(
       toBinaryVersion(config.scalaVersion)
     val runtimeBinaryScalaVersion =
       toBinaryVersion(compilerScalaVersion)
+      
     if (
       config.scalacClasspath.nonEmpty && inputBinaryScalaVersion != runtimeBinaryScalaVersion
     ) {
@@ -60,18 +67,36 @@ final class ExplicitResultTypes(
           s"To fix this problem, either remove ExplicitResultTypes from .scalafix.conf or make sure Scalafix is loaded with $inputBinaryScalaVersion."
       )
     } else {
+      
+
+      val newPc: LazyValue[Option[PresentationCompiler]] =
+        if (config.scalacClasspath.isEmpty) {
+          LazyValue.now(None)
+        } else {
+          LazyValue.from { () =>
+            Success(
+              new ScalaPresentationCompiler(
+                classpath = config.scalacClasspath.map(_.toNIO).toSeq,
+                options = Nil
+              ).withConfiguration(
+                new PresentationCompilerConfigImpl(
+                   _symbolPrefixes = symbolReplacements 
+                )
+              )
+            )
+          }
+        }
       config.conf // Support deprecated explicitReturnTypes config
         .getOrElse("explicitReturnTypes", "ExplicitResultTypes")(
           ExplicitResultTypesConfig.default
         )
-        .map(c => new ExplicitResultTypes(c))
+        .map(c => new ExplicitResultTypes(c, newPc))
     }
   }
 
   override def fix(implicit ctx: SemanticDocument): Patch =
     try unsafeFix()
     catch {
-      // maybe specific exception
       case _: Throwable if !config.fatalWarnings =>
         Patch.empty
     }
@@ -150,7 +175,7 @@ final class ExplicitResultTypes(
       config.skipSimpleDefinitions.isSimpleDefinition(body)
 
     def isImplicit: Boolean = false
-      // defn && !isImplicitly(body)
+    // defn && !isImplicitly(body)
 
     def hasParentWihTemplate: Boolean =
       defn.parent.exists(_.is[Template])
@@ -158,12 +183,12 @@ final class ExplicitResultTypes(
     def qualifyingImplicit: Boolean =
       isImplicit && !isFinalLiteralVal
 
-    def matchesConfig: Boolean = false
-      // matchesMemberKind && matchesMemberVisibility && !matchesSimpleDefinition
+    def matchesConfig: Boolean =
+      matchesMemberKind() && matchesMemberVisibility() && !matchesSimpleDefinition()
 
     def qualifyingNonImplicit: Boolean = {
       !onlyImplicits &&
-      hasParentWihTemplate //&&
+      hasParentWihTemplate // &&
       // !defn.hasMod("implicit")
     }
 
@@ -182,6 +207,7 @@ final class ExplicitResultTypes(
     for {
       name <- defnName(defn)
       defnSymbol <- name.symbol.asNonEmpty
+      pc <- pc.value
     } yield {
       ctx.tree.origin match
         case _: DialectOnly => empty
@@ -189,15 +215,33 @@ final class ExplicitResultTypes(
         case parsed: Parsed =>
           val text = parsed.source.input.text
           val uri = parsed.source.input match
-            // case Ammonite(input) => 
+            // case Ammonite(input) =>
             case File(path, _) => path.toURI
             case VirtualFile(path, _) => Paths.get(path).toUri()
             case _ => Paths.get(s"./A${Random.nextInt()}.scala").toUri()
-          val params = new CompilerOffsetParams(uri, text, replace.pos.end, EmptyCancelToken)
+          val params = new CompilerOffsetParams(
+            uri,
+            text,
+            replace.pos.end,
+            EmptyCancelToken
+          )
           val result = pc.insertInferredType(params).get()
-          // TODO imports are ignored
-          Patch.addRight(replace, result.get(0).getNewText())          
-      
+          result.asScala.toList
+            .map { edit =>
+              val start = edit.getRange().getStart()
+              val last = ctx.tokens.tokens.takeWhile { token =>
+                val beforeLine = token.pos.endLine < start.getLine()
+                val beforeColumn = token.pos.endLine == start
+                  .getLine() && token.pos.endColumn <= start.getCharacter()
+                beforeLine || beforeColumn
+
+              }.last
+              Patch.addRight(last, edit.getNewText())
+            }
+            .reduce { case (p1, p2) =>
+              p1 + p2
+            }
+
     }
 
   def fixDefinition(defn: Defn, body: Term)(implicit

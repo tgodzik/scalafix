@@ -2,11 +2,12 @@
 package test.explicitResultTypes
 
 import scala.util._
-import java.{util => ju}
-import java.util.Locale.Category
-import scala.collection.Searching
 import scala.collection.immutable.ListSet
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.FiniteDuration
+import java.util.TimeZone
+import scala.collection.Searching.SearchResult
+import java.util.Locale.Category
 
 object ExplicitResultTypesImports {
 
@@ -16,15 +17,15 @@ object ExplicitResultTypesImports {
   val duplicate1: FiniteDuration = null.asInstanceOf[scala.concurrent.duration.FiniteDuration]
   val duplicate2: FiniteDuration = null.asInstanceOf[scala.concurrent.duration.FiniteDuration]
 
-  val timezone: ju.TimeZone = null.asInstanceOf[java.util.TimeZone]
+  val timezone: TimeZone = null.asInstanceOf[java.util.TimeZone]
 
-  val inner: Searching.SearchResult = null.asInstanceOf[scala.collection.Searching.SearchResult]
+  val inner: SearchResult = null.asInstanceOf[scala.collection.Searching.SearchResult]
 
   final val javaEnum: Category = java.util.Locale.Category.DISPLAY
 
   // TODO: respect type aliases?
   type MyResult = Either[Int, String]
-  val inferTypeAlias: Either[Int,String] = null.asInstanceOf[Either[Int, String]]
+  val inferTypeAlias: Either[Int, String] = null.asInstanceOf[Either[Int, String]]
 
   val wildcardImport: Try[Int] = Try(1)
 
@@ -42,8 +43,8 @@ object ExplicitResultTypesImports {
     case object B extends ADT2 with Mixin[String]
     case object C extends ADT2 with Mixin[Int]
   }
-  val longSharedParent1: List[ADT2 with Mixin[_]] = List(ADT2.A, ADT2.B)
-  val longSharedParent2: List[ADT2 with Mixin[Int]] = List(ADT2.A, ADT2.C)
+  val longSharedParent1: List[ADT2 & Mixin[? >: Int & String <: Int | String]] = List(ADT2.A, ADT2.B)
+  val longSharedParent2: List[ADT2 & Mixin[Int]] = List(ADT2.A, ADT2.C)
 
-  val juMap: ju.Map[Int,String] = java.util.Collections.emptyMap[Int, String]()
+  val juMap: java.util.Map[Int, String] = java.util.Collections.emptyMap[Int, String]()
 }

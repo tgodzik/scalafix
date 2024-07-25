@@ -93,9 +93,9 @@ lazy val rules = projectMatrix
           semanticdbScalacCore,
           collectionCompat
         )
-      else 
+      else
         List(
-          "org.scala-lang" % "scala3-presentation-compiler_3" % scalaVersion.value,
+          "org.scala-lang" % "scala3-presentation-compiler_3" % scalaVersion.value
         )
     }
   )

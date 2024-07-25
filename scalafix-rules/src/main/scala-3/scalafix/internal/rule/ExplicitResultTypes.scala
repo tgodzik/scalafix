@@ -58,7 +58,7 @@ final class ExplicitResultTypes(
       toBinaryVersion(config.scalaVersion)
     val runtimeBinaryScalaVersion =
       toBinaryVersion(compilerScalaVersion)
-      
+
     if (
       config.scalacClasspath.nonEmpty && inputBinaryScalaVersion != runtimeBinaryScalaVersion
     ) {
@@ -67,7 +67,6 @@ final class ExplicitResultTypes(
           s"To fix this problem, either remove ExplicitResultTypes from .scalafix.conf or make sure Scalafix is loaded with $inputBinaryScalaVersion."
       )
     } else {
-      
 
       val newPc: LazyValue[Option[PresentationCompiler]] =
         if (config.scalacClasspath.isEmpty) {
@@ -80,7 +79,7 @@ final class ExplicitResultTypes(
                 options = Nil
               ).withConfiguration(
                 new PresentationCompilerConfigImpl(
-                   _symbolPrefixes = symbolReplacements 
+                  _symbolPrefixes = symbolReplacements
                 )
               )
             )
@@ -260,7 +259,7 @@ final class ExplicitResultTypes(
     )
     def patchEmptyValue(term: Term): Patch = {
       term match {
-        // case q"${option(_)}.empty[$_]" => TODO check
+        // case q"${option(_)}.empty[$_]" =>
         //   Patch.replaceTree(term, "None")
         // case q"${list(_)}.empty[$_]" =>
         //   Patch.replaceTree(term, "Nil")

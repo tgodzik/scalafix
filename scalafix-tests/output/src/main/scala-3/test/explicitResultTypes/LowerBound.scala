@@ -11,5 +11,5 @@ object LowerBound {
   case object A extends BoundObject[City]
   case object B extends BoundObject[Town]
   case object C extends BoundObject[Village]
-  val x: List[BoundObject[_ <: Bound]] = List(A, B, C)
+  val x: List[BoundObject[? >: City & Town & Village <: City | Town | Village]] = List(A, B, C)
 }

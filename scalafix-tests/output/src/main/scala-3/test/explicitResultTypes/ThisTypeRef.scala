@@ -13,7 +13,7 @@ object ThisTypeRef {
     def cp(): this.type
   }
   class ThisTypeImpl extends ThisType {
-    def cp(): this.type = this
+    def cp(): ThisTypeImpl.this.type = this
   }
 
 }

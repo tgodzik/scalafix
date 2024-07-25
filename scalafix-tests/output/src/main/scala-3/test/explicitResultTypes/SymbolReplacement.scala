@@ -3,10 +3,10 @@ package test.explicitResultTypes
 object SymbolReplacement {
   trait Timer
   object DefaultTimer extends Timer
-  def myTimer: Timer = DefaultTimer
+  def myTimer: DefaultTimer.type = DefaultTimer
 
   trait Animal
   class Dog extends Animal
-  val dog: Animal = new Dog()
+  val dog: Dog = new Dog()
 }
 

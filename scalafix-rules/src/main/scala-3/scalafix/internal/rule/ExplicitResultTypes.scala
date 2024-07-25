@@ -36,7 +36,9 @@ final class ExplicitResultTypes(
 
   val compilerScalaVersion: String = RulesBuildInfo.scalaVersion
 
-  private def toBinaryVersion(v: String) = v.split('.').take(2).mkString(".")
+  private def toBinaryVersion(v: String) =
+    if (v.startsWith("3.")) "3"
+    else v.split('.').take(2).mkString(".")
 
   override def description: String =
     "Inserts type annotations for inferred public members."
@@ -53,7 +55,7 @@ final class ExplicitResultTypes(
     val symbolReplacements =
       config.conf.dynamic.ExplicitResultTypes.symbolReplacements
         .as[Map[String, String]]
-        .getOrElse(Map.empty) // TODO use
+        .getOrElse(Map.empty)
     val inputBinaryScalaVersion =
       toBinaryVersion(config.scalaVersion)
     val runtimeBinaryScalaVersion =
@@ -63,7 +65,8 @@ final class ExplicitResultTypes(
       config.scalacClasspath.nonEmpty && inputBinaryScalaVersion != runtimeBinaryScalaVersion
     ) {
       Configured.error(
-        s"The ExplicitResultTypes rule needs to run with the same Scala binary version as the one used to compile target sources ($inputBinaryScalaVersion). " +
+        s"The ExplicitResultTypes was run with ${runtimeBinaryScalaVersion}, " +
+          s"this rule needs to run with the same Scala binary version as the one used to compile target sources ($inputBinaryScalaVersion). " +
           s"To fix this problem, either remove ExplicitResultTypes from .scalafix.conf or make sure Scalafix is loaded with $inputBinaryScalaVersion."
       )
     } else {

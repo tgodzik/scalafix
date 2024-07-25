@@ -95,7 +95,8 @@ lazy val rules = projectMatrix
         )
       else
         List(
-          "org.scala-lang" % "scala3-presentation-compiler_3" % scalaVersion.value
+          "org.scalameta" % "mtags-interfaces" % "1.3.4",
+          coursierInterfaces
         )
     }
   )

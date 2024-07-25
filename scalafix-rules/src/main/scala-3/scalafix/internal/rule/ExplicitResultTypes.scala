@@ -1,31 +1,31 @@
 package scalafix.internal.rule
 
-import scala.util.control.NonFatal
+import java.net.URI
+import java.nio.file.Paths
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionStage
 
-import scala.meta._
-import scala.meta.contrib._
+import scala.jdk.CollectionConverters.*
+import scala.util.Random
+import scala.util.Try
+
+import scala.meta.*
+import scala.meta.contrib.*
+import scala.meta.inputs.Input.File
+import scala.meta.inputs.Input.VirtualFile
+import scala.meta.pc.CancelToken
+import scala.meta.pc.OffsetParams
+import scala.meta.pc.PresentationCompiler
+import scala.meta.trees.Origin.DialectOnly
+import scala.meta.trees.Origin.Parsed
 
 import buildinfo.RulesBuildInfo
 import metaconfig.Configured
-import scalafix.patch.Patch
-import scalafix.util.TokenOps
-import scalafix.v1._
-import dotty.tools.pc.ScalaPresentationCompiler
-import scala.meta.internal.metals.CompilerOffsetParams
-import scala.meta.trees.Origin.DialectOnly
-import scala.meta.trees.Origin.Parsed
-import scala.meta.inputs.Input.File
-import scala.meta.inputs.Input.VirtualFile
-import scala.jdk.CollectionConverters._
-import java.nio.file.Paths
-import scala.util.Random
-import scala.meta.internal.metals.EmptyCancelToken
-import scalafix.patch.Patch.empty
 import scalafix.internal.v1.LazyValue
-import scala.util.Success
-import scala.meta.pc.PresentationCompilerConfig
-import scala.meta.internal.pc.PresentationCompilerConfigImpl
-import scala.meta.pc.PresentationCompiler
+import scalafix.patch.Patch
+import scalafix.patch.Patch.empty
+import scalafix.util.TokenOps
+import scalafix.v1.*
 
 final class ExplicitResultTypes(
     config: ExplicitResultTypesConfig,
@@ -70,23 +70,23 @@ final class ExplicitResultTypes(
           s"To fix this problem, either remove ExplicitResultTypes from .scalafix.conf or make sure Scalafix is loaded with $inputBinaryScalaVersion."
       )
     } else {
-
       val newPc: LazyValue[Option[PresentationCompiler]] =
-        if (config.scalacClasspath.isEmpty) {
-          LazyValue.now(None)
-        } else {
-          LazyValue.from { () =>
-            Success(
-              new ScalaPresentationCompiler(
-                classpath = config.scalacClasspath.map(_.toNIO).toSeq,
-                options = Nil
-              ).withConfiguration(
+        LazyValue.from { () =>
+          Try(
+            Embedded
+              .presentationCompiler(config.scalaVersion)
+              .withConfiguration(
                 new PresentationCompilerConfigImpl(
-                  _symbolPrefixes = symbolReplacements
+                  symbolPrefixes = symbolReplacements.asJava
                 )
               )
-            )
-          }
+              .newInstance(
+                this.name.toString,
+                config.scalacClasspath.map(_.toNIO).asJava,
+                // getting assertion errors if included
+                config.scalacOptions.filter(!_.contains("-release")).asJava
+              )
+          )
         }
       config.conf // Support deprecated explicitReturnTypes config
         .getOrElse("explicitReturnTypes", "ExplicitResultTypes")(
@@ -120,11 +120,12 @@ final class ExplicitResultTypes(
   }
 
   // Don't explicitly annotate vals when the right-hand body is a single call
-  // to `implicitly`. Prevents ambiguous implicit. Not annotating in such cases,
+  // to `implicitly` or `summon`. Prevents ambiguous implicit. Not annotating in such cases,
   // this a common trick employed implicit-heavy code to workaround SI-2712.
   // Context: https://gitter.im/typelevel/cats?at=584573151eb3d648695b4a50
   private def isImplicitly(term: Term): Boolean = term match {
     case Term.ApplyType(Term.Name("implicitly"), _) => true
+    case Term.ApplyType(Term.Name("summon"), _) => true
     case _ => false
   }
 
@@ -177,7 +178,7 @@ final class ExplicitResultTypes(
       config.skipSimpleDefinitions.isSimpleDefinition(body)
 
     def isImplicit: Boolean = false
-    // defn && !isImplicitly(body)
+    defn.hasMod(Mod.Implicit()) && !isImplicitly(body)
 
     def hasParentWihTemplate: Boolean =
       defn.parent.exists(_.is[Template])
@@ -190,8 +191,8 @@ final class ExplicitResultTypes(
 
     def qualifyingNonImplicit: Boolean = {
       !onlyImplicits &&
-      hasParentWihTemplate // &&
-      // !defn.hasMod("implicit")
+      hasParentWihTemplate &&
+      !defn.hasMod(Mod.Implicit())
     }
 
     matchesConfig && {
@@ -224,8 +225,7 @@ final class ExplicitResultTypes(
           val params = new CompilerOffsetParams(
             uri,
             text,
-            replace.pos.end,
-            EmptyCancelToken
+            replace.pos.end
           )
           val result = pc.insertInferredType(params).get()
           result.asScala.toList
@@ -250,28 +250,29 @@ final class ExplicitResultTypes(
       ctx: SemanticDocument
   ): Patch = {
     val lst = ctx.tokenList
-    val option = SymbolMatcher.exact("scala/Option.")
-    val list = SymbolMatcher.exact(
-      "scala/package.List.",
-      "scala/collection/immutable/List."
-    )
-    val seq = SymbolMatcher.exact(
-      "scala/package.Seq.",
-      "scala/collection/Seq.",
-      "scala/collection/immutable/Seq."
-    )
-    def patchEmptyValue(term: Term): Patch = {
-      term match {
-        // case q"${option(_)}.empty[$_]" =>
-        //   Patch.replaceTree(term, "None")
-        // case q"${list(_)}.empty[$_]" =>
-        //   Patch.replaceTree(term, "Nil")
-        // case q"${seq(_)}.empty[$_]" =>
-        //   Patch.replaceTree(term, "Nil")
-        case _ =>
-          Patch.empty
-      }
-    }
+    // val option = SymbolMatcher.exact("scala/Option.")
+    // val list = SymbolMatcher.exact(
+    //   "scala/package.List.",
+    //   "scala/collection/immutable/List."
+    // )
+    // val seq = SymbolMatcher.exact(
+    //   "scala/package.Seq.",
+    //   "scala/collection/Seq.",
+    //   "scala/collection/immutable/Seq."
+    // )
+    // def patchEmptyValue(term: Term): Patch = {
+    //   term match {
+    //     // case q"${option(_)}.empty[$_]" =>
+    //     //   Patch.replaceTree(term, "None")
+    //     // case q"${list(_)}.empty[$_]" =>
+    //     //   Patch.replaceTree(term, "Nil")
+    //     // case q"${seq(_)}.empty[$_]" =>
+    //     //   Patch.replaceTree(term, "Nil")
+    //     case _ =>
+    //       Patch.empty
+    //   }
+    // }
+    def patchEmptyValue(term: Term): Patch = Patch.empty
     import lst._
     for {
       start <- defn.tokens.headOption
@@ -291,4 +292,20 @@ final class ExplicitResultTypes(
     } yield typePatch + valuePatchOpt
   }.asPatch.atomic
 
+  case class CompilerOffsetParams(
+      uri: URI,
+      text: String,
+      offset: Int
+  ) extends OffsetParams {
+
+    override def token(): CancelToken = new CancelToken {
+
+      override def checkCanceled(): Unit = ()
+
+      override def onCancel(): CompletionStage[java.lang.Boolean] =
+        CompletableFuture.completedFuture(java.lang.Boolean.FALSE)
+
+    }
+
+  }
 }

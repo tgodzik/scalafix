@@ -9,7 +9,6 @@ import metaconfig._
 import metaconfig.annotation._
 import metaconfig.generic.Surface
 import scalafix.internal.config._
-import scala.meta.classifiers.XtensionClassifiable
 
 case class ExplicitResultTypesConfig(
     @Description("Enable/disable this rule for defs, vals or vars.")
@@ -53,12 +52,15 @@ object ExplicitResultTypesConfig {
 }
 
 case class SimpleDefinitions(kinds: Set[String]) {
+
+  import scala.meta.classifiers.XtensionClassifiable
+
   private def isSimpleRef(tree: m.Tree): Boolean = tree match {
     case _: m.Name => true
     case t: m.Term.Select => isSimpleRef(t.qual)
     case _ => false
   }
-
+  
   def isSimpleDefinition(body: m.Term): Boolean = {
     val kind =
       if (body.is[m.Lit]) Some("Lit")

@@ -85,6 +85,10 @@ lazy val rules = projectMatrix
     moduleName := "scalafix-rules",
     description := "Built-in Scalafix rules",
     buildInfoSettingsForRules,
+    libraryDependencies ++= List(
+      "org.scalameta" % "mtags-interfaces" % "1.3.4",
+      coursierInterfaces
+    ),
     libraryDependencies ++= {
       if (!isScala3.value)
         List(
@@ -94,10 +98,7 @@ lazy val rules = projectMatrix
           collectionCompat
         )
       else
-        List(
-          "org.scalameta" % "mtags-interfaces" % "1.3.4",
-          coursierInterfaces
-        )
+        Nil
     }
   )
   .defaultAxes(VirtualAxis.jvm)

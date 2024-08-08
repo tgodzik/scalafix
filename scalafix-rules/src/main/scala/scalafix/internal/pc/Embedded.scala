@@ -1,10 +1,10 @@
-package scalafix.internal.rule
+package scalafix.internal.pc
 
 import java.net.URLClassLoader
 import java.nio.file.Path
 import java.util.ServiceLoader
 
-import scala.jdk.CollectionConverters.*
+import scala.jdk.CollectionConverters._
 
 import scala.meta.pc.PresentationCompiler
 
@@ -21,7 +21,7 @@ object Embedded {
       scala3PresentationCompilerDependencies(scalaVersion)
     val jars = Fetch
       .create()
-      .addDependencies(deps*)
+      .addDependencies(deps:_*)
       .addRepositories(
         MavenRepository.of(
           "https://oss.sonatype.org/content/repositories/snapshots"
@@ -88,7 +88,7 @@ object Embedded {
     val allURLs = allJars.map(_.toUri.toURL).toArray
     // Share classloader for a subset of types.
     val parent =
-      new PresentationCompilerClassLoader(this.getClass.getClassLoader)
+      new scalafix.internal.pc.PresentationCompilerClassLoader(this.getClass.getClassLoader)
     new URLClassLoader(allURLs, parent)
   }
 }

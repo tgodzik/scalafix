@@ -1,4 +1,4 @@
-package scalafix.internal.rule
+package scalafix.internal.pc
 
 /**
  * ClassLoader that is used to reflectively invoke presentation compiler APIs.

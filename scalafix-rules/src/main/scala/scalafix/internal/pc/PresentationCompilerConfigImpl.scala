@@ -1,4 +1,4 @@
-package scalafix.internal.rule
+package scalafix.internal.pc
 
 import java.util.Optional
 import java.util.concurrent.TimeUnit

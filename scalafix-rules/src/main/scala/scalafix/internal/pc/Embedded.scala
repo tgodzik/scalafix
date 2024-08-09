@@ -17,7 +17,7 @@ object Embedded {
   def presentationCompiler(
       scalaVersion: String
   ): PresentationCompiler = {
-    val deps =
+   val deps =
       scala3PresentationCompilerDependencies(scalaVersion)
     val jars = Fetch
       .create()
@@ -48,7 +48,7 @@ object Embedded {
   }
 
   private def supportPresentationCompilerInDotty(scalaVersion: String) = {
-    scalaVersion.split("\\.").take(3).map(_.toInt) match {
+    scalaVersion.replaceAll(raw"-RC\d+", "").split("\\.").take(3).map(_.toInt) match {
       case Array(3, minor, patch) => minor > 3 || minor == 3 && patch >= 4
       case _ => false
     }

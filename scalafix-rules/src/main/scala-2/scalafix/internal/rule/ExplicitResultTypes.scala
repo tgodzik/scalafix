@@ -124,7 +124,6 @@ final class ExplicitResultTypes(
             defnSymbol <- name.symbol.asNonEmpty
             patch <- types.toPatch(name.pos, defnSymbol, replace, defn, space)
           } yield {
-            println(patch)
             patch
           }
         case None =>

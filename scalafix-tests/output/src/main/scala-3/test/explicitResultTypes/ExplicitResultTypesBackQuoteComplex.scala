@@ -6,5 +6,5 @@ object ExplicitResultTypesBackQuoteComplex {
   def method(a: String*) = a.head
   val func: Seq[String] => String = method _
   val hash = new java.util.HashMap[String, Int]()
-  val func2: (String, java.util.function.Function[? >: String, ? <: Int]) => Int = hash.computeIfAbsent _
+  val func2: (String, java.util.function.Function[? >: String <: Object, ? <: Int]) => Int = hash.computeIfAbsent _
 }

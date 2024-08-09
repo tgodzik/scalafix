@@ -13,7 +13,6 @@ import scala.meta.pc.PresentationCompiler
 import scala.meta.trees.Origin.DialectOnly
 import scala.meta.trees.Origin.Parsed
 
-import buildinfo.RulesBuildInfo
 import scalafix.internal.v1.LazyValue
 import scalafix.patch.Patch
 import scalafix.patch.Patch.empty
@@ -28,8 +27,6 @@ import scalafix.v1._
 final class ExplicitResultTypesFallback private[ExplicitResultTypesFallback] (
     pc: LazyValue[Option[PresentationCompiler]]
 ) {
-
-  val compilerScalaVersion: String = RulesBuildInfo.scalaVersion
 
   def shutdownCompiler(): Unit = {
     pc.value.foreach{

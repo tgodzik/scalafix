@@ -8,7 +8,7 @@ import scala.meta.internal.pc.ScalafixGlobal
 import buildinfo.RulesBuildInfo
 import metaconfig.Configured
 import scalafix.internal.compat.CompilerCompat._
-import scalafix.internal.pc.ExplicitResultTypesFallback
+import scalafix.internal.pc.PcExplicitResultTypes
 import scalafix.internal.v1.LazyValue
 import scalafix.patch.Patch
 import scalafix.v1._
@@ -16,7 +16,7 @@ import scalafix.v1._
 final class ExplicitResultTypes(
     val config: ExplicitResultTypesConfig,
     global: LazyValue[Option[ScalafixGlobal]],
-    fallback: LazyValue[Option[ExplicitResultTypesFallback]]
+    fallback: LazyValue[Option[PcExplicitResultTypes]]
 ) extends SemanticRule("ExplicitResultTypes")
     with ExplicitResultTypesBase[Scala2Printer] {
 
@@ -82,7 +82,7 @@ final class ExplicitResultTypes(
           new ExplicitResultTypes(
             c,
             LazyValue.now(None),
-            LazyValue.now(Option(ExplicitResultTypesFallback(config)))
+            LazyValue.now(Option(PcExplicitResultTypes.dynamic(config)))
           )
         )
     } else {
@@ -108,7 +108,7 @@ final class ExplicitResultTypes(
 
 class Scala2Printer(
     globalPrinter: Option[CompilerTypePrinter],
-    fallback: LazyValue[Option[ExplicitResultTypesFallback]]
+    fallback: LazyValue[Option[PcExplicitResultTypes]]
 ) extends Printer {
   def defnType(
       defn: Defn,

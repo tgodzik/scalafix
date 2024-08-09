@@ -102,7 +102,9 @@ lazy val rules = projectMatrix
           collectionCompat
         )
       else
-        Nil
+        List(
+          "org.scala-lang" %% "scala3-presentation-compiler" % scalaVersion.value
+        )
     }
   )
   .defaultAxes(VirtualAxis.jvm)

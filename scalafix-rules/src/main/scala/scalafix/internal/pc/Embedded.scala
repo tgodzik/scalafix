@@ -1,7 +1,6 @@
 package scalafix.internal.pc
 
 import java.net.URLClassLoader
-import java.nio.file.Path
 import java.util.ServiceLoader
 
 import scala.jdk.CollectionConverters._
@@ -11,28 +10,20 @@ import scala.meta.pc.PresentationCompiler
 import coursierapi.Dependency
 import coursierapi.Fetch
 import coursierapi.MavenRepository
+import scala.collection.concurrent.TrieMap
 
 object Embedded {
+
+  private val presentationCompilers: TrieMap[String, URLClassLoader] =
+    TrieMap.empty
 
   def presentationCompiler(
       scalaVersion: String
   ): PresentationCompiler = {
-    val deps =
-      scala3PresentationCompilerDependencies(scalaVersion)
-    val jars = Fetch
-      .create()
-      .addDependencies(deps: _*)
-      .addRepositories(
-        MavenRepository.of(
-          "https://oss.sonatype.org/content/repositories/snapshots"
-        )
-      )
-      .fetch()
-      .asScala
-      .map(_.toPath())
-      .toSeq
-    val classloader = newPresentationCompilerClassLoader(jars)
-
+    val classloader = presentationCompilers.getOrElseUpdate(
+      scalaVersion,
+      newPresentationCompilerClassLoader(scalaVersion)
+    )
     val presentationCompilerClassname =
       if (supportPresentationCompilerInDotty(scalaVersion)) {
         "dotty.tools.pc.ScalaPresentationCompiler"
@@ -92,8 +83,23 @@ object Embedded {
   }
 
   private def newPresentationCompilerClassLoader(
-      jars: Seq[Path]
+      scalaVersion: String
   ): URLClassLoader = {
+
+    val deps =
+      scala3PresentationCompilerDependencies(scalaVersion)
+    val jars = Fetch
+      .create()
+      .addDependencies(deps: _*)
+      .addRepositories(
+        MavenRepository.of(
+          "https://oss.sonatype.org/content/repositories/snapshots"
+        )
+      )
+      .fetch()
+      .asScala
+      .map(_.toPath())
+      .toSeq
     val allJars = jars.iterator
     val allURLs = allJars.map(_.toUri.toURL).toArray
     // Share classloader for a subset of types.

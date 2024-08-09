@@ -2,18 +2,24 @@ package scalafix.internal.rule
 
 import scala.meta.*
 
+import buildinfo.RulesBuildInfo
+import dotty.tools.pc.ScalaPresentationCompiler
 import metaconfig.Configured
-import scalafix.internal.pc.ExplicitResultTypesFallback
+import scalafix.internal.pc.PcExplicitResultTypes
 import scalafix.patch.Patch
 import scalafix.v1.*
 
 final class ExplicitResultTypes(
     val config: ExplicitResultTypesConfig,
-    fallback: Option[ExplicitResultTypesFallback]
+    fallback: Option[PcExplicitResultTypes]
 ) extends SemanticRule("ExplicitResultTypes")
     with ExplicitResultTypesBase[Scala3Printer] {
 
   def this() = this(ExplicitResultTypesConfig.default, None)
+
+  val compilerScalaVersion: String = RulesBuildInfo.scalaVersion
+
+  private def toBinaryVersion(v: String) = v.split('.').take(2).mkString(".")
 
   override def description: String =
     "Inserts type annotations for inferred public members."
@@ -34,7 +40,20 @@ final class ExplicitResultTypes(
         ExplicitResultTypesConfig.default
       )
       .map(c =>
-        new ExplicitResultTypes(c, Option(ExplicitResultTypesFallback(config)))
+        new ExplicitResultTypes(
+          c,
+          Option {
+            if (
+              toBinaryVersion(config.scalaVersion) == toBinaryVersion(
+                compilerScalaVersion
+              )
+            )
+              PcExplicitResultTypes
+                .static(config, new ScalaPresentationCompiler())
+            else
+              PcExplicitResultTypes.dynamic(config)
+          }
+        )
       )
   }
 
@@ -50,7 +69,7 @@ final class ExplicitResultTypes(
 }
 
 class Scala3Printer(
-    fallback: Option[ExplicitResultTypesFallback]
+    fallback: Option[PcExplicitResultTypes]
 ) extends Printer {
 
   def defnType(

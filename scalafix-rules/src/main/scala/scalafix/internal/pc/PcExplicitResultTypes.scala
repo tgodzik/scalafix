@@ -24,7 +24,7 @@ import scalafix.v1._
  *
  * @param pc
  */
-final class ExplicitResultTypesFallback private[ExplicitResultTypesFallback] (
+final class PcExplicitResultTypes(
     pc: LazyValue[Option[PresentationCompiler]]
 ) {
 
@@ -86,31 +86,50 @@ final class ExplicitResultTypesFallback private[ExplicitResultTypesFallback] (
 
 }
 
-object ExplicitResultTypesFallback {
-  def apply(config: Configuration): ExplicitResultTypesFallback = {
+object PcExplicitResultTypes {
+  private def configure(
+      config: Configuration,
+      pc: PresentationCompiler
+  ): PresentationCompiler = {
     val symbolReplacements =
       config.conf.dynamic.ExplicitResultTypes.symbolReplacements
         .as[Map[String, String]]
         .getOrElse(Map.empty)
+
+    pc.withConfiguration(
+      PresentationCompilerConfigImpl(
+        symbolPrefixes = symbolReplacements.asJava
+      )
+    ).newInstance(
+      "ExplicitResultTypes",
+      config.scalacClasspath.map(_.toNIO).asJava,
+      // getting assertion errors if included
+      config.scalacOptions.filter(!_.contains("-release")).asJava
+    )
+  }
+
+  def dynamic(config: Configuration): PcExplicitResultTypes = {
     val newPc: LazyValue[Option[PresentationCompiler]] =
       LazyValue.from { () =>
         Try(
-          Embedded
-            .presentationCompiler(config.scalaVersion)
-            .withConfiguration(
-              PresentationCompilerConfigImpl(
-                symbolPrefixes = symbolReplacements.asJava
-              )
-            )
-            .newInstance(
-              "ExplicitResultTypes",
-              config.scalacClasspath.map(_.toNIO).asJava,
-              // getting assertion errors if included
-              config.scalacOptions.filter(!_.contains("-release")).asJava
-            )
+          configure(
+            config,
+            Embedded.presentationCompiler(config.scalaVersion)
+          )
         )
       }
-    new ExplicitResultTypesFallback(newPc)
+    new PcExplicitResultTypes(newPc)
+  }
+
+  def static(
+      config: Configuration,
+      pc: PresentationCompiler
+  ): PcExplicitResultTypes = {
+    val newPc: LazyValue[Option[PresentationCompiler]] =
+      LazyValue.from { () =>
+        Try(configure(config, pc))
+      }
+    new PcExplicitResultTypes(newPc)
   }
 
 }

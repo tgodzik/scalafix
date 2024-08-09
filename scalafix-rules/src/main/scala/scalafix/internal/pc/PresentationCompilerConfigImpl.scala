@@ -24,7 +24,7 @@ case class PresentationCompilerConfigImpl(
     timeoutDelay: Long = 20,
     timeoutUnit: TimeUnit = TimeUnit.SECONDS,
     semanticdbCompilerOptions: java.util.List[String] =
-      PresentationCompilerConfig.defaultSemanticdbCompilerOptions(),
+      PresentationCompilerConfig.defaultSemanticdbCompilerOptions()
 ) extends PresentationCompilerConfig {
 
   override def isDefaultSymbolPrefixes(): Boolean = false

@@ -19,17 +19,17 @@ import scalafix.patch.Patch.empty
 import scalafix.v1._
 
 /**
-  * Fallback tries to download and use existing presentation compiler either from
-  * Metals or the Scala compiler itself.
-  *
-  * @param pc
-  */
+ * Fallback tries to download and use existing presentation compiler either from
+ * Metals or the Scala compiler itself.
+ *
+ * @param pc
+ */
 final class ExplicitResultTypesFallback private[ExplicitResultTypesFallback] (
     pc: LazyValue[Option[PresentationCompiler]]
 ) {
 
   def shutdownCompiler(): Unit = {
-    pc.value.foreach{
+    pc.value.foreach {
       _.shutdown()
     }
   }
@@ -87,7 +87,7 @@ final class ExplicitResultTypesFallback private[ExplicitResultTypesFallback] (
 }
 
 object ExplicitResultTypesFallback {
-  def apply(config: Configuration) = {
+  def apply(config: Configuration): ExplicitResultTypesFallback = {
     val symbolReplacements =
       config.conf.dynamic.ExplicitResultTypes.symbolReplacements
         .as[Map[String, String]]

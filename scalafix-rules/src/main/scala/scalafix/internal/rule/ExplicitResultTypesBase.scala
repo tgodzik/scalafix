@@ -2,10 +2,9 @@ package scalafix.internal.rule
 
 import scala.meta._
 import scala.meta.contrib._
-import scalafix.v1._
-import scala.meta.contrib.Extract
-import scalafix.util.TokenOps
 
+import scalafix.util.TokenOps
+import scalafix.v1._
 
 trait Printer {
   def defnType(
@@ -17,7 +16,6 @@ trait Printer {
   ): Option[Patch]
 
 }
-
 
 trait ExplicitResultTypesBase[P <: Printer] {
 
@@ -32,7 +30,6 @@ trait ExplicitResultTypesBase[P <: Printer] {
     case Term.ApplyType(Term.Name("summon"), _) => true
     case _ => false
   }
-
 
   protected def defnBody(defn: Defn): Option[Term] = Option(defn).collect {
     case Defn.Val(_, _, _, term) => term
@@ -162,8 +159,7 @@ trait ExplicitResultTypesBase[P <: Printer] {
   }
 }
 
-
-object ExplicitResultTypesBase{
+object ExplicitResultTypesBase {
 
   def defnName(defn: Defn): Option[Name] = Option(defn).collect {
     case Defn.Val(_, Pat.Var(name) :: Nil, _, _) => name

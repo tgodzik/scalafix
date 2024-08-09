@@ -1,5 +1,10 @@
 package scalafix.internal.rule
 
+import scala.util.control.NonFatal
+
+import scala.meta._
+import scala.meta.internal.pc.ScalafixGlobal
+
 import buildinfo.RulesBuildInfo
 import metaconfig.Configured
 import scalafix.internal.compat.CompilerCompat._
@@ -7,10 +12,6 @@ import scalafix.internal.pc.ExplicitResultTypesFallback
 import scalafix.internal.v1.LazyValue
 import scalafix.patch.Patch
 import scalafix.v1._
-
-import scala.meta._
-import scala.meta.internal.pc.ScalafixGlobal
-import scala.util.control.NonFatal
 
 final class ExplicitResultTypes(
     val config: ExplicitResultTypesConfig,
@@ -105,32 +106,32 @@ final class ExplicitResultTypes(
 
 }
 
-  class Scala2Printer(
-      globalPrinter: Option[CompilerTypePrinter],
-      fallback: LazyValue[Option[ExplicitResultTypesFallback]]
-  ) extends Printer {
-    def defnType(
-        defn: Defn,
-        replace: Token,
-        space: String
-    )(implicit
-        ctx: SemanticDocument
-    ): Option[Patch] = {
+class Scala2Printer(
+    globalPrinter: Option[CompilerTypePrinter],
+    fallback: LazyValue[Option[ExplicitResultTypesFallback]]
+) extends Printer {
+  def defnType(
+      defn: Defn,
+      replace: Token,
+      space: String
+  )(implicit
+      ctx: SemanticDocument
+  ): Option[Patch] = {
 
-      globalPrinter match {
-        case Some(types) =>
-          for {
-            name <- ExplicitResultTypesBase.defnName(defn)
-            defnSymbol <- name.symbol.asNonEmpty
-            patch <- types.toPatch(name.pos, defnSymbol, replace, defn, space)
-          } yield {
-            patch
-          }
-        case None =>
-          fallback.value.flatMap { fallbackExplicit =>
-            fallbackExplicit.defnType(replace)
-          }
-      }
-
+    globalPrinter match {
+      case Some(types) =>
+        for {
+          name <- ExplicitResultTypesBase.defnName(defn)
+          defnSymbol <- name.symbol.asNonEmpty
+          patch <- types.toPatch(name.pos, defnSymbol, replace, defn, space)
+        } yield {
+          patch
+        }
+      case None =>
+        fallback.value.flatMap { fallbackExplicit =>
+          fallbackExplicit.defnType(replace)
+        }
     }
+
   }
+}

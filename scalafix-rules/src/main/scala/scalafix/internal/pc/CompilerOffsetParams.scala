@@ -3,6 +3,7 @@ package scalafix.internal.pc
 import java.net.URI
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
+
 import scala.meta.pc.CancelToken
 import scala.meta.pc.OffsetParams
 

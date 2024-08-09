@@ -86,7 +86,11 @@ lazy val rules = projectMatrix
     description := "Built-in Scalafix rules",
     buildInfoSettingsForRules,
     libraryDependencies ++= List(
-      "org.scalameta" % "mtags-interfaces" % "1.3.4",
+      ("org.scalameta" % "mtags-interfaces" % "1.3.4")
+        .exclude("org.eclipse.lsp4j", "org.eclipse.lsp4j")
+        .exclude("org.eclipse.lsp4j", "org.eclipse.lsp4j.jsonrpc"),
+      // latest version release for JDK 8, this will be dropped from interfaces at some point
+      "org.eclipse.lsp4j" % "org.eclipse.lsp4j" % "0.20.1",
       coursierInterfaces
     ),
     libraryDependencies ++= {

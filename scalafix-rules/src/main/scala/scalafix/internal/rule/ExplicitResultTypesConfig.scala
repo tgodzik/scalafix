@@ -60,7 +60,7 @@ case class SimpleDefinitions(kinds: Set[String]) {
     case t: m.Term.Select => isSimpleRef(t.qual)
     case _ => false
   }
-  
+
   def isSimpleDefinition(body: m.Term): Boolean = {
     val kind =
       if (body.is[m.Lit]) Some("Lit")

@@ -33,7 +33,7 @@ sealed trait ScalaVersion {
     case Major(major) => s"${major.value}"
     case Minor(major, minorVersion) => s"${major.value}.${minorVersion}"
     case Patch(major, minorVersion, patchVersion) =>
-      s"${major.value}.${minorVersion}.$patchVersion"    
+      s"${major.value}.${minorVersion}.$patchVersion"
     case RC(major, minorVersion, patchVersion, rc) =>
       s"${major.value}.${minorVersion}.$patchVersion-RC$rc"
   }

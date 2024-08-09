@@ -1,12 +1,11 @@
 package scalafix.internal.rule
 
+import scala.meta.*
+
 import metaconfig.Configured
 import scalafix.internal.pc.ExplicitResultTypesFallback
 import scalafix.patch.Patch
-import scalafix.patch.Patch.empty
 import scalafix.v1.*
-
-import scala.meta.*
 
 final class ExplicitResultTypes(
     val config: ExplicitResultTypesConfig,

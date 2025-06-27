@@ -4,4 +4,5 @@ scalafix.internal.rule.NoValInForComprehension
 scalafix.internal.rule.OrganizeImports
 scalafix.internal.rule.RedundantSyntax
 scalafix.internal.rule.RemoveUnused
+scalafix.internal.rule.RemoveUnnecessaryNn
 scalafix.internal.rule.LeakingImplicitClassVal
